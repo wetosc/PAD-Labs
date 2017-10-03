@@ -1,13 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"sync"
 )
 
 // Queue data type
 type Queue struct {
 	sync.Mutex
-	Items []interface{}
+	Items []interface{} `json:"items"`
 }
 
 // NewQueue : Create Queue with capacity
@@ -35,4 +36,17 @@ func (q *Queue) Pop() interface{} {
 	q.Items[0] = nil
 	q.Items = q.Items[1:]
 	return item
+}
+
+// Serialize converts the queue in byte array
+func (q *Queue) Serialize() ([]byte, error) {
+	bytes, err := json.Marshal(q)
+	return bytes, err
+}
+
+// DeSerialize creates the queue from byte array
+func DeSerialize(b []byte) (*Queue, error) {
+	var q = &Queue{}
+	err := json.Unmarshal(b, q)
+	return q, err
 }

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"pad.com/lab1/eumgent"
+	"pad.com/lab1/code/eumgent"
 )
 
 var message = eumgent.Message{Type: eumgent.POST, Info: "Some info"}
