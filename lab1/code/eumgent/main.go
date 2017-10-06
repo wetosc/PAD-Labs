@@ -1,5 +1,6 @@
 // Package eumgent stands for eugenius message agent.
-// It implements the shared functional of sender, receiver and message queue
+// It implements the shared functional of the client and the message broker
+// Usually, you may not need it
 package eumgent
 
 import (
@@ -14,16 +15,27 @@ const PORT = 9000
 type MessageType string
 
 const (
-	//POST means that the message will be added to the queue
-	POST MessageType = "post"
-	//GET means that a message will be popped from the queue
-	GET MessageType = "get"
+	// PUBLISH : Client sends a message to the broker
+	PUBLISH = "PUBLISH"
+
+	// DELIVER : Broker sends a message to the subscriber
+	DELIVER = "DELIVER"
+
+	// SUBSCRIBE : Subscribes a client to the queue "queue"
+	SUBSCRIBE = "SUBSCRIBE"
+
+	// RESPONSE : Notifies that a transaction completed succesfully. Usually can be ignored
+	RESPONSE = "RESPONSE"
+
+	// ERROR : Signifies an error in the request, like trying to subscribe to an unexistent queue.
+	ERROR = "ERROR"
 )
 
 //Message is the base type for sent messages
 type Message struct {
-	Type MessageType `json:"type"`
-	Info string      `json:"info"`
+	Type  MessageType `json:"type"`
+	Queue string      `json:"queue"`
+	Info  string      `json:"info"`
 }
 
 //ToJSON creates a json object from a message
@@ -52,14 +64,7 @@ func WriteString(client net.Conn, msg string) error {
 
 // Read reads data from connection and returns a ([]byte, error)
 func Read(client net.Conn) ([]byte, error) {
-	reply := make([]byte, 100)
+	reply := make([]byte, 1024, 1024)
 	length, err := client.Read(reply)
 	return reply[:length], err
-}
-
-// ReadString reads data from connection and returns a (string, error)
-func ReadString(client net.Conn) (string, error) {
-	reply := make([]byte, 100)
-	_, err := client.Read(reply)
-	return string(reply), err
 }
