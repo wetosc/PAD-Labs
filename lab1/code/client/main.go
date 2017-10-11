@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -19,21 +21,37 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	parseFlags()
-	isSender = false
+
+	conn, err := net.Dial("tcp", ":"+strconv.Itoa(port))
+	if err != nil {
+		log.Debug().Msgf("Error connecting to the broker : %v", err)
+		panic(err)
+	}
+
+	client := eumgent.NewClient(conn)
+
 	if isSender {
 		log.Info().Msgf("Client of type Sender started on port %v, with queue '%v' and info '%v'", port, queue, payload)
-		message := eumgent.Message{Type: eumgent.PUBLISH, Queue: queue, Info: payload}
-		for {
-			time.Sleep(time.Second)
-			SendMessage(port, &message)
-		}
+		startSender(client)
 	} else {
 		log.Info().Msgf("Client of type Subscriber started on port %v, with queue '%v'", port, queue)
-		conn, err := Subscribe(port, queue)
-		if err == nil {
-			Listen(conn)
-		} else {
-			log.Debug().Msgf("The client will close now.\t%v", err)
+		startSender(client)
+	}
+}
+
+func startSender(client *eumgent.Client) {
+	message := eumgent.Message{Type: eumgent.PUBLISH, Queue: queue, Info: payload}
+	for {
+		time.Sleep(time.Second)
+		client.Outgoing <- message
+	}
+}
+
+func startReceiver(client *eumgent.Client) {
+	for {
+		select {
+		case msg := <-client.Incoming:
+			log.Info().Msgf("Received message: %v", msg)
 		}
 	}
 }
