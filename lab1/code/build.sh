@@ -16,4 +16,4 @@ gnome-terminal -x sh -c '  ./client/client -info "Publisher BETA" -type sender -
 
 gnome-terminal -x sh -c '  ./client/client -type receiver -queue "a.a" -v debug  ; bash'
 gnome-terminal -x sh -c '  ./client/client -type receiver -queue "a.b" -v debug  ; bash'
-gnome-terminal -x sh -c '  ./client/client -type receiver -queue "a.c" -v debug  ; bash'
+gnome-terminal -x sh -c '  ./client/client -type receiver -queue "a.*" -v debug  ; bash'

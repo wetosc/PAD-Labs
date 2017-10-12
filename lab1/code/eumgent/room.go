@@ -2,6 +2,7 @@ package eumgent
 
 import (
 	"net"
+	"regexp"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -23,9 +24,12 @@ func (room *Room) Deliver(msg Message) {
 	msg.Type = DELIVER
 	i := 0
 	for _, client := range room.Clients {
-		if client.Mode == SUBSCRIBE && client.Queue == msg.Queue {
-			client.Outgoing <- msg
-			i++
+		if client.Mode == SUBSCRIBE {
+			match, _ := regexp.MatchString(client.Queue, msg.Queue)
+			if match {
+				client.Outgoing <- msg
+				i++
+			}
 		}
 	}
 	if i > 0 {
@@ -84,6 +88,7 @@ func filter(vs []*Client, f func(*Client) bool) []*Client {
 	return vsf
 }
 
+//Each "interval" removes the clients with the mode ERROR
 func (room *Room) startClientsCleaner(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	quit := make(chan struct{})
