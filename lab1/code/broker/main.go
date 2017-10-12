@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"net"
+	"os"
 	"strconv"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"pad.com/lab1/code/eumgent"
 )
 
@@ -14,6 +16,10 @@ import (
 var port = eumgent.PORT
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	parseFlags()
+
 	room := eumgent.NewRoom()
 
 	listener, _ := net.Listen("tcp", ":"+strconv.Itoa(port))

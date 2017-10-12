@@ -35,7 +35,7 @@ func main() {
 		startSender(client)
 	} else {
 		log.Info().Msgf("Client of type Subscriber started on port %v, with queue '%v'", port, queue)
-		startSender(client)
+		startReceiver(client)
 	}
 }
 
@@ -44,10 +44,13 @@ func startSender(client *eumgent.Client) {
 	for {
 		time.Sleep(time.Second)
 		client.Outgoing <- message
+		log.Info().Msgf("Message sent: %v", message)
 	}
 }
 
 func startReceiver(client *eumgent.Client) {
+	message := eumgent.Message{Type: eumgent.SUBSCRIBE, Queue: queue}
+	client.Outgoing <- message
 	for {
 		select {
 		case msg := <-client.Incoming:
