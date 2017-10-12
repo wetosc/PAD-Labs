@@ -14,6 +14,5 @@ Possible verbs for the "type" parameter:
 - **PUBLISH** : Client sends a message to the broker
 - **DELIVER** : Broker sends a message to the subscriber
 - **SUBSCRIBE** : Subscribes a client to the queue "queue"
-- **UNSUBSCRIBE** : Unsubscribes a client from the queue "queue"
 - **RESPONSE** : Notifies that a transaction completed succesfully. Usually can be ignored
 - **ERROR** : Signifies an error in the request, like trying to subscribe to an unexistent queue.

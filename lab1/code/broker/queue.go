@@ -38,6 +38,38 @@ func (q *Queue) Pop() interface{} {
 	return item
 }
 
+//Delete deletes the first occurrence of the item
+func (q *Queue) Delete(item interface{}) {
+	i := q.Index(item)
+	q.Lock()
+	copy(q.Items[i:], q.Items[i+1:])
+	q.Items[len(q.Items)-1] = nil
+	q.Items = q.Items[:len(q.Items)-1]
+}
+
+//Index finds the first index of the element, if not found returns -1
+func (q *Queue) Index(item interface{}) int {
+	q.Lock()
+	for i, v := range q.Items {
+		if v == item {
+			return i
+		}
+	}
+	return -1
+}
+
+// Filter return a slice of filtered elements
+func (q *Queue) Filter(f func(interface{}) bool) []interface{} {
+	q.Lock()
+	filtered := q.Items[:0]
+	for _, item := range q.Items {
+		if f(item) {
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered
+}
+
 // Serialize converts the queue in byte array
 func (q *Queue) Serialize() ([]byte, error) {
 	bytes, err := json.Marshal(q)
