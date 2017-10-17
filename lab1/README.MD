@@ -22,9 +22,14 @@ Possible verbs:
 - **DELIVER** : Broker sends a message to the subscriber
 - **SUBSCRIBE** : Subscribes a client to the queue "queue"
 - **RESPONSE** : Notifies that a transaction completed succesfully. Usually can be ignored
-- **ERROR** : Signifies an error in the request, like trying to subscribe to an unexistent queue.
-
-
+- **ERROR** : Signifies an error in the request, like trying to subscribe to an unexistent queue.  
+  
+  
+## Eumgent library
+---
+The library has 2 important entities: Client and Room. The client reads and writes messages. The room accepts connections (clients) and the messages from them. Also, because it stores the clients, it can send messages back. 
+  
+  
 ## Project Dependencies:
 ---
 - zerolog ( "github.com/rs/zerolog/log" ) : Used for logging
