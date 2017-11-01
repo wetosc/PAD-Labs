@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/binary"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"pad.com/lab2/code/eugddc"
@@ -17,6 +17,12 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	log.Info().Msgf("Client started")
+
+	step1()
+}
+
+func step1() {
+	log.Info().Msg("Started Step 1")
 	addrSender, _ := net.ResolveUDPAddr("udp", eugddc.Address)
 	addrMe, _ := net.ResolveUDPAddr("udp", "localhost:9000")
 
@@ -25,11 +31,11 @@ func main() {
 }
 
 func pingUDPOnce(addr1 *net.UDPAddr, addr2 *net.UDPAddr) {
-	conn, err := net.DialUDP("udp", addr1, addr2)
+	conn, err := net.ListenUDP("udp", addr1)
 	eugddc.CheckError(err, "Error creating write UDP connection")
 	defer conn.Close()
 	log.Info().Msgf("Pinging with 1 bit of data ...")
-	_, err = conn.Write(make([]byte, 1))
+	_, err = conn.WriteToUDP(make([]byte, 1), addr2)
 	eugddc.CheckError(err, "Error sending UDP ping")
 
 }
@@ -47,28 +53,10 @@ func listenUDP(addr *net.UDPAddr) {
 		eugddc.CheckError(err, "Error on read from UDP")
 		if nr > 0 {
 			data = data[:nr]
-			nr := binary.BigEndian.Uint16(data)
+			str := string(data)
+			nr, _ := strconv.Atoi(str)
 			log.Debug().Msgf("Response from %v : %v", addr, nr)
 		}
 		time.Sleep(1 * time.Second)
 	}
 }
-
-// func pingUDP(conn *net.UDPConn) {
-// 	data := make([]byte, 1000)
-// 	conn.SetReadBuffer(8192)
-// 	for {
-// 		_, err := conn.Write([]byte("hello, world\n"))
-// 		if err != nil {
-// 			log.Info().Msgf("Error writting data: %v", err)
-// 		}
-// 		time.Sleep(1 * time.Second)
-// 		nr, addr, err := conn.ReadFromUDP(data)
-// 		if nr > 0 {
-// 			data = data[:nr]
-// 			str := string(data)
-// 			log.Debug().Msgf("Read from UDP addr %v : 	%v", addr, str)
-// 		}
-// 		time.Sleep(1 * time.Second)
-// 	}
-// }

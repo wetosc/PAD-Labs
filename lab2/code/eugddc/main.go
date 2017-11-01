@@ -10,7 +10,7 @@ import (
 )
 
 //Address Defines the address of the UDP group
-const Address = "239.0.0.0:9000"
+const Address = "239.0.0.0:8000"
 
 type Client struct {
 	Incoming chan []byte
