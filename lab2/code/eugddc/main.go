@@ -23,9 +23,7 @@ func (client *Client) Read() {
 	for {
 		data := make([]byte, 1000)
 		nr, err := client.reader.Read(data)
-		if err != nil {
-			log.Debug().Msgf("Error reading:	%v", err)
-		}
+		CheckError(err, "Error reading")
 		if nr == 0 {
 			continue
 		}
@@ -38,9 +36,7 @@ func (client *Client) Write() {
 	for data := range client.Outgoing {
 		_, err := client.writer.Write(data)
 		client.writer.Flush()
-		if err != nil {
-			log.Debug().Msgf("Error writting data:	%v", err)
-		}
+		CheckError(err, "Error writting data")
 	}
 }
 
