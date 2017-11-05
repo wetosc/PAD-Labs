@@ -18,7 +18,8 @@ func main() {
 
 	log.Info().Msgf("Client started")
 
-	step1()
+	go step1()
+	time.Sleep(10 * time.Second)
 }
 
 func step1() {
