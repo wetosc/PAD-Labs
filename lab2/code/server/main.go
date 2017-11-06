@@ -24,7 +24,7 @@ func main() {
 
 	go step1()
 	go listenTCP()
-	time.Sleep(10 * time.Second)
+	time.Sleep(10 * time.Minute)
 }
 
 func step1() {
@@ -55,7 +55,11 @@ func handleTCPConn(conn net.Conn) {
 	client := eugddc.NewClient(conn)
 	for {
 		data := <-client.Incoming
-		log.Debug().Msgf("Received data request: %v", data)
+		msg := string(data)
+		log.Debug().Msgf("Received data request: %v", msg)
+		if msg == "*" {
+			client.Outgoing <- []byte("DATA")
+		}
 	}
 }
 
@@ -82,5 +86,4 @@ func sendNr(addr *net.UDPAddr) {
 	defer conn2.Close()
 	str := strconv.Itoa(1)
 	conn2.Write([]byte(str))
-
 }

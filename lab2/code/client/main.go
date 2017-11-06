@@ -59,6 +59,7 @@ func step3(addr net.Addr) {
 	conn, err := net.Dial("tcp", addr.String())
 	eugddc.CheckError(err, "Error creating connection")
 	client := eugddc.NewClient(conn)
+	client.Outgoing <- []byte("*")
 	for {
 		data := <-client.Incoming
 		log.Debug().Msgf("Received data: %v", string(data))
@@ -72,7 +73,6 @@ func pingUDPOnce(addr1 *net.UDPAddr, addr2 *net.UDPAddr) {
 	log.Info().Msgf("Pinging with 1 bit of data ...")
 	_, err = conn.WriteToUDP(make([]byte, 1), addr2)
 	eugddc.CheckError(err, "Error sending UDP ping")
-
 }
 
 func listenUDP(addr *net.UDPAddr) {
