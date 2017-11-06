@@ -3,7 +3,6 @@ package main
 import (
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	"pad.com/lab2/code/eugddc"
@@ -18,17 +17,16 @@ type Node struct {
 }
 
 // Step1 consist in pinging to a udp multicast group and then listening for udp unicast responses
-func Step1() {
+func step1() {
 	log.Debug().Msg("Started Step 1")
-	addrSender, _ := net.ResolveUDPAddr("udp", eugddc.Address)
+	addrSender, _ := net.ResolveUDPAddr("udp", eugddc.MulticastAddress)
 	addrMe, _ := net.ResolveUDPAddr("udp", "localhost:9000")
 
 	pingUDPOnce(addrMe, addrSender)
-	listenUDP(addrMe)
 }
 
 // Step2 consist in finding the maven (the node with the most connections)
-func Step2() Node {
+func step2() Node {
 	maven := nodes[0]
 	for _, node := range nodes {
 		if node.Nodes > maven.Nodes {
@@ -39,7 +37,7 @@ func Step2() Node {
 }
 
 // Step3 consist in connecting over TCP to the maven and reqesting all data
-func Step3(addr net.Addr) {
+func step3(addr net.Addr) {
 	conn, err := net.Dial("tcp", addr.String())
 	eugddc.CheckError(err, "Error creating connection")
 	client := eugddc.NewClient(conn)
@@ -54,15 +52,12 @@ func pingUDPOnce(addr1 *net.UDPAddr, addr2 *net.UDPAddr) {
 	conn, err := net.ListenUDP("udp", addr1)
 	eugddc.CheckError(err, "Error creating write UDP connection")
 	defer conn.Close()
+
 	log.Info().Msgf("Pinging with 1 bit of data ...")
+
 	_, err = conn.WriteToUDP(make([]byte, 1), addr2)
 	eugddc.CheckError(err, "Error sending UDP ping")
-}
 
-func listenUDP(addr *net.UDPAddr) {
-	conn, err := net.ListenUDP("udp", addr)
-	eugddc.CheckError(err, "Error creating read UDP connection")
-	defer conn.Close()
 	data := make([]byte, 1024)
 	conn.SetReadBuffer(8192)
 
@@ -77,6 +72,5 @@ func listenUDP(addr *net.UDPAddr) {
 			nodes = append(nodes, Node{Nodes: nr, Addr: addr})
 			log.Debug().Msgf("Response from %v : %v", addr, nr)
 		}
-		time.Sleep(1 * time.Second)
 	}
 }

@@ -14,12 +14,12 @@ func main() {
 
 	log.Info().Msgf("Client started")
 
-	go Step1()
-	time.Sleep(1 * time.Second)
+	go step1()
+	time.Sleep(10 * time.Second)
 	if len(nodes) == 0 {
 		panic("No nodes detected, something is wrong")
 	}
-	maven := Step2()
+	maven := step2()
 	log.Debug().Msgf("Maven: %v", maven.Addr)
-	Step3(maven.Addr)
+	step3(maven.Addr)
 }

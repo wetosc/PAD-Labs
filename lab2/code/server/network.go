@@ -14,11 +14,9 @@ func Step1() {
 	// fmt.Println(ifaces)
 	eth0, _ := net.InterfaceByName("lo")
 	// fmt.Println(eth0)
-	addr, _ := net.ResolveUDPAddr("udp", eugddc.Address)
+	addr, _ := net.ResolveUDPAddr("udp", eugddc.MulticastAddress)
 	conn, err := net.ListenMulticastUDP("udp", eth0, addr)
-	if err != nil {
-		log.Info().Msgf("Error joining the multicast group: %v", err)
-	}
+	eugddc.CheckError(err, "Error joining the multicast group")
 	listenUDP(conn)
 }
 
@@ -67,6 +65,6 @@ func sendNr(addr *net.UDPAddr) {
 	lAddr, _ := net.ResolveUDPAddr("udp", lAddrStr)
 	conn2, _ := net.DialUDP("udp", lAddr, addr)
 	defer conn2.Close()
-	str := strconv.Itoa(1)
+	str := strconv.Itoa(nodeCounter)
 	conn2.Write([]byte(str))
 }
