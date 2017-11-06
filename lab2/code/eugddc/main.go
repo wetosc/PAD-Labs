@@ -4,14 +4,16 @@ package eugddc
 
 import (
 	"bufio"
+	"io"
 	"net"
 
 	"github.com/rs/zerolog/log"
 )
 
-//Address Defines the address of the UDP group
-const Address = "239.0.0.0:8000"
+//MulticastAddress Defines the address of the UDP group
+const MulticastAddress = "239.0.0.0:8000"
 
+// Client is a helper for connections; allows use of channels for writing and reading
 type Client struct {
 	Incoming chan []byte
 	Outgoing chan []byte
@@ -24,6 +26,9 @@ func (client *Client) Read() {
 		data := make([]byte, 1000)
 		nr, err := client.reader.Read(data)
 		CheckError(err, "Error reading")
+		if err == io.EOF {
+			break
+		}
 		if nr == 0 {
 			continue
 		}
