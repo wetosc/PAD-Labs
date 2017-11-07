@@ -15,7 +15,7 @@ func main() {
 	log.Info().Msgf("Client started")
 
 	go step1()
-	time.Sleep(10 * time.Second)
+	time.Sleep(3 * time.Second)
 	if len(nodes) == 0 {
 		panic("No nodes detected, something is wrong")
 	}

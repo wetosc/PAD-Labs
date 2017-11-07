@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"pad.com/lab2/code/eugddc"
@@ -33,15 +34,50 @@ func Step2() {
 }
 
 func handleTCPConn(conn net.Conn) {
+	defer conn.Close()
 	client := eugddc.NewClient(conn)
-	for {
-		data := <-client.Incoming
+	data := <-client.Incoming
+	go func() {
 		msg := string(data)
 		log.Debug().Msgf("Received data request: %v", msg)
-		if msg == "*" {
-			client.Outgoing <- []byte("DATA")
+		switch msg {
+		case "-*":
+			client.Outgoing <- eugddc.JSONfromDogs(items)
+			return
+		case "*":
+			collectedItems := <-collectData()
+			log.Debug().Msgf("CollectedItems: %v", collectedItems)
+			allItems := append(collectedItems, items...)
+			client.Outgoing <- eugddc.JSONfromDogs(allItems)
+			return
 		}
+	}()
+}
+
+func collectData() chan []eugddc.Dog {
+	outChan := make(chan []eugddc.Dog, 1000)
+
+	for _, str := range connections {
+		go func(str string) {
+			conn, err := net.Dial("tcp", str)
+			eugddc.CheckError(err, "Error connectiong to nodes")
+			defer conn.Close()
+			client := eugddc.NewClient(conn)
+			client.Outgoing <- []byte("-*")
+
+		LoopCollect:
+			for {
+				select {
+				case data := <-client.Incoming:
+					dogs, _ := eugddc.DogsFromJSON(data)
+					outChan <- dogs
+				case <-time.After(time.Second * 2):
+					break LoopCollect
+				}
+			}
+		}(str)
 	}
+	return outChan
 }
 
 func listenUDP(conn *net.UDPConn) {

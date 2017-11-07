@@ -44,7 +44,8 @@ func step3(addr net.Addr) {
 	client.Outgoing <- []byte("*")
 	for {
 		data := <-client.Incoming
-		log.Debug().Msgf("Received data: %v", string(data))
+		items, _ := eugddc.DogsFromJSON(data)
+		log.Debug().Msgf("Received data: %v", items)
 	}
 }
 
