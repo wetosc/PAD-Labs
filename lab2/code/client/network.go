@@ -42,6 +42,7 @@ func step3(addr net.Addr) {
 	eugddc.CheckError(err, "Error creating connection")
 	client := eugddc.NewClient(conn)
 	client.Outgoing <- []byte("*")
+	log.Info().Msgf("Message sent to the maven: %v", addr.String())
 	for {
 		data := <-client.Incoming
 		items, _ := eugddc.DogsFromJSON(data)

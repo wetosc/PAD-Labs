@@ -19,10 +19,14 @@ type Client struct {
 	Outgoing chan []byte
 	reader   *bufio.Reader
 	writer   *bufio.Writer
+	closed   bool
 }
 
 func (client *Client) Read() {
 	for {
+		if client.closed {
+			return
+		}
 		data := make([]byte, 1000)
 		nr, err := client.reader.Read(data)
 		CheckError(err, "Error reading")
@@ -39,6 +43,9 @@ func (client *Client) Read() {
 
 func (client *Client) Write() {
 	for data := range client.Outgoing {
+		if client.closed {
+			return
+		}
 		_, err := client.writer.Write(data)
 		client.writer.Flush()
 		CheckError(err, "Error writting data")
@@ -51,6 +58,11 @@ func (client *Client) Listen() {
 	go client.Write()
 }
 
+// Close ends
+func (client *Client) Close() {
+	client.closed = true
+}
+
 //NewClient creates a new client from a connection
 func NewClient(connection net.Conn) *Client {
 	writer := bufio.NewWriter(connection)
@@ -61,6 +73,7 @@ func NewClient(connection net.Conn) *Client {
 		Outgoing: make(chan []byte),
 		reader:   reader,
 		writer:   writer,
+		closed:   false,
 	}
 
 	client.Listen()

@@ -34,24 +34,29 @@ func Step2() {
 }
 
 func handleTCPConn(conn net.Conn) {
-	defer conn.Close()
 	client := eugddc.NewClient(conn)
-	data := <-client.Incoming
-	go func() {
+	defer conn.Close()
+	defer client.Close()
+
+LoopTCP:
+	for {
+		data := <-client.Incoming
 		msg := string(data)
 		log.Debug().Msgf("Received data request: %v", msg)
 		switch msg {
 		case "-*":
 			client.Outgoing <- eugddc.JSONfromDogs(items)
-			return
+			log.Debug().Msgf("Sent items to %v", conn.RemoteAddr().String())
+			break LoopTCP
 		case "*":
 			collectedItems := <-collectData()
+			log.Debug().Msgf("Received ALL request")
 			log.Debug().Msgf("CollectedItems: %v", collectedItems)
 			allItems := append(collectedItems, items...)
 			client.Outgoing <- eugddc.JSONfromDogs(allItems)
-			return
+			break LoopTCP
 		}
-	}()
+	}
 }
 
 func collectData() chan []eugddc.Dog {
@@ -61,8 +66,10 @@ func collectData() chan []eugddc.Dog {
 		go func(str string) {
 			conn, err := net.Dial("tcp", str)
 			eugddc.CheckError(err, "Error connectiong to nodes")
-			defer conn.Close()
 			client := eugddc.NewClient(conn)
+			defer conn.Close()
+			defer client.Close()
+
 			client.Outgoing <- []byte("-*")
 
 		LoopCollect:

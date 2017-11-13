@@ -25,11 +25,11 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	parseFlags()
 
-	log.Info().Msgf("Node started")
-
 	lAddrStr = ":" + strconv.Itoa(9000+port)
-
 	loadData()
+
+	log.Info().Msgf("Node %v started", port)
+	log.Info().Msgf("My info: %v", items)
 
 	go Step1()
 	go Step2()
@@ -65,4 +65,5 @@ func parseNodes(str string) {
 		port, _ := strconv.Atoi(n)
 		connections = append(connections, ":"+strconv.Itoa(9000+port))
 	}
+	nodeCounter = len(connections)
 }
