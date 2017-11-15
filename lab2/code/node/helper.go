@@ -3,47 +3,24 @@ package main
 import (
 	"flag"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 
-	"pad.com/lab2/code/eugddc"
-
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"pad.com/lab2/code/eugddc"
 )
 
-var lAddrStr string
-var port = rand.Intn(10)
-var nodeCounter = 1
 var fileName = "data.json"
 var items []eugddc.Dog
 var connections []string
 
-func main() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	parseFlags()
-
-	lAddrStr = ":" + strconv.Itoa(9000+port)
-	loadData()
-
-	log.Info().Msgf("Node %v started", port)
-	log.Info().Msgf("My info: %v", items)
-
-	go Step1()
-	go Step2()
-	for {
-	}
-}
-
 func parseFlags() {
-	portPointer := flag.Int("id", port, "Set the port / id of the broker.")
+	portPointer := flag.Int("id", rand.Intn(10), "Set the port / id of the broker.")
 	fileNamePointer := flag.String("f", fileName, "Set the file from which to load the data")
 	connectionsPointer := flag.String("n", "", "Set the id of nodes connected to this one")
 	logLevel := flag.String("v", "debug", "Set the verbosity level (info or debug)")
 	flag.Parse()
-	port = *portPointer
+	myAddr = ":" + strconv.Itoa(9000+*portPointer)
 	fileName = *fileNamePointer
 	parseNodes(*connectionsPointer)
 	switch *logLevel {
@@ -65,5 +42,4 @@ func parseNodes(str string) {
 		port, _ := strconv.Atoi(n)
 		connections = append(connections, ":"+strconv.Itoa(9000+port))
 	}
-	nodeCounter = len(connections)
 }
