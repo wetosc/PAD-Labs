@@ -25,7 +25,7 @@ type Message struct {
 }
 
 func NewMessage(query string) Message {
-	return Message{Query: query}
+	return Message{Query: query, Data: nil}
 }
 
 func NewMessage_Data(query string, dogs []Dog) Message {

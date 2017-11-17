@@ -9,8 +9,11 @@ import (
 )
 
 type Client struct {
-	// sync.Mutex
 	conn net.Conn
+}
+
+func (c *Client) Addr() (string, string) {
+	return c.conn.LocalAddr().String(), c.conn.RemoteAddr().String()
 }
 
 func NewClient(conn net.Conn) *Client {

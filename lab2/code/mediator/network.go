@@ -20,12 +20,15 @@ func onMessage(c *tcpClient.Client, data []byte) {
 	}
 	m, err := eugddc.MessageFromJSON(data)
 	eugddc.CheckError(err, "Error converting JSON")
+	log.Info().Msgf("New message from client with query %v", m.Query)
 	var allData = make([]eugddc.Dog, 0, 10)
 
 	for _, node := range connections {
 
 		func(_node string) {
 			nodeC := tcpClient.Connect(node)
+			addr1, addr2 := nodeC.Addr()
+			log.Debug().Msgf("Connexion from %v to %v", addr1, addr2)
 			nodeC.Write(eugddc.MessageToJSON(m))
 
 			nodeC.ReadAsync(func(_c *tcpClient.Client, data []byte) {
@@ -33,8 +36,9 @@ func onMessage(c *tcpClient.Client, data []byte) {
 					return
 				}
 				nodeData, err := eugddc.MessageFromJSON(data)
-				newDogs := nodeData.Data
 				eugddc.CheckError(err, "Error converting JSON")
+				newDogs := nodeData.Data
+				log.Info().Msgf("New message from node with %v elements", len(newDogs))
 				allData = append(allData, newDogs...)
 			})
 		}(node)
