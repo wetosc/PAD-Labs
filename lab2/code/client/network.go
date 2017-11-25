@@ -8,10 +8,11 @@ import (
 
 func requestAllData() {
 	client := tcpClient.TryConnectSync(eugddc.MediatorAddr)
-	log.Debug().Msg("Connected to mediator")
+	lAddr, rAddr := client.Addr()
+	log.Debug().Msgf("Connected to mediator %v -> %v", lAddr, rAddr)
 	client.ReadAsync(onMediatorMessage)
-	m := eugddc.NewMessage("*")
-	client.Write(eugddc.MessageToJSON(m))
+	m := eugddc.NodeMessage{Type: "CLIENT", Trace: nil, Query: eugddc.NodeQuery{ID: "", Query: "*"}, Data: nil}
+	client.Write(m.ToJSON())
 	log.Debug().Msg("Sent message '*' to mediator")
 }
 
@@ -19,7 +20,7 @@ func onMediatorMessage(c *tcpClient.Client, data []byte) {
 	if len(data) == 0 {
 		return
 	}
-	m, err := eugddc.MessageFromJSON(data)
+	m, err := eugddc.NodeMessageFromJSON(data)
 	eugddc.CheckError(err, "Error parsing mediator JSON")
-	log.Debug().Msgf("Message: %v", m)
+	log.Debug().Msgf("Received data: %v", m.Data)
 }

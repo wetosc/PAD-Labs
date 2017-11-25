@@ -1,20 +1,32 @@
 package main
 
 import (
-	"encoding/json"
 	"net"
-	"strconv"
-	"strings"
-	"time"
+	"sync"
 
 	"github.com/rs/zerolog/log"
 	"pad.com/lab2/code/eugddc"
 	"pad.com/lab2/code/tcpClient"
 )
 
-var requestID = 0
-var nodeData = make(map[string]DogDict)
-var querySieve = make(map[string]bool)
+type NodeState struct {
+	Data       eugddc.DogDict
+	SubQueries int
+	State      string
+}
+
+type NodeMap struct {
+	sync.Mutex
+	q map[string]*NodeState
+}
+
+type ConnPool struct {
+	sync.Mutex
+	pool map[string]*tcpClient.Client
+}
+
+var nD = &NodeMap{q: make(map[string]*NodeState)}
+var cP = &ConnPool{pool: make(map[string]*tcpClient.Client)}
 
 func onConnect(conn net.Conn) {
 	client := tcpClient.NewClient(conn)
@@ -25,91 +37,95 @@ func onMessage(c *tcpClient.Client, data []byte) {
 	if len(data) == 0 {
 		return
 	}
-	_, remoteAddr := c.Addr()
-	log.Info().Msgf("New message from %v", remoteAddr)
-	if strings.Contains(remoteAddr, eugddc.MediatorAddr) {
-		m, err := eugddc.MessageFromJSON(data)
-		eugddc.CheckError(err, "Error converting JSON")
-		onMediatorMessage(c, m)
-	} else {
-		m, err := NodeMessageFromJSON(data)
-		eugddc.CheckError(err, "Error converting JSON")
-		onNodeMessage(c, m)
+	m, err := eugddc.NodeMessageFromJSON(data)
+	eugddc.CheckError(err, "Error converting JSON  ***\n"+string(string(data))+"\n*** ")
+	_, rAddr := c.Addr()
+	log.Debug().Msgf("\nNew request from %v \n%v\n", rAddr, m)
+	switch m.Type {
+	case "REPLY":
+		onREPLYMessage(m, rAddr)
+	case "GET":
+		onGETMessage(m)
 	}
 }
 
-func onMediatorMessage(c *tcpClient.Client, m eugddc.Message) {
-	log.Debug().Msgf("New mediator request with query: %v", m.Query)
-	queryID := strconv.Itoa(requestID)
-	nodeData[queryID][myAddr] = items
-	requestID++
+func onREPLYMessage(m eugddc.NodeMessage, rAddr string) {
+	queryID := m.Query.ID
+	nD.Lock()
+	defer nD.Unlock()
+
+	nD.q[queryID].Data[rAddr] = m.Data // Add collected data to storage
+	log.Debug().Msgf("REPLY message collected data: %v,\nnecessary responses: %v", len(nD.q[queryID].Data), nD.q[queryID].SubQueries)
+	if len(m.Trace) > 0 && // Check if it's not the last node in the chain
+		len(nD.q[queryID].Data) == nD.q[queryID].SubQueries+1 { // Check if has all the data (+1 because of my items)
+		parent, rest := m.Trace[0], m.Trace[1:]
+		m.Trace = rest
+		m.Data = nD.q[queryID].Data.ToSlice()
+		newC := getClient(parent)
+		newC.WriteAsync(m.ToJSON())
+		log.Debug().Msgf("\nSent reply message to %v: \n%v\n", parent, m)
+		delete(nD.q, queryID)
+	}
+}
+
+func onGETMessage(m eugddc.NodeMessage) {
+	queryID := m.Query.ID
+	nD.Lock()
+	defer nD.Unlock()
+	if contains(m.Trace, myAddr) {
+		log.Debug().Msgf("Received message from myself ???")
+		return
+	}
+	if nD.q[queryID] != nil { // This request was here before, send an empty REPLY
+		m.Type = "REPLY"
+		parent, rest := m.Trace[0], m.Trace[1:]
+		m.Trace = rest
+		newC := getClient(parent)
+		newC.WriteAsync(m.ToJSON())
+		log.Debug().Msgf("\nSent empty reply message to %v: \n%v\n", parent, m)
+		return
+	}
+
+	m.Trace = append([]string{myAddr}, m.Trace...) // Insert myself at begining of trace
+	i := 0
 	for _, node := range connections {
-		askNodeInfo(node, queryID)
-	}
-	time.Sleep(3 * time.Second)
-	var newDogs = nodeData[queryID].toSlice()
-	response := eugddc.NewMessage_Data(m.Query, newDogs)
-	c.Write(eugddc.MessageToJSON(response))
-	delete(nodeData, queryID)
-}
-
-func askNodeInfo(node string, queryID string) {
-	c := tcpClient.Connect(node)
-	m := NodeMessage{Origin: myAddr, Sender: myAddr, Query: NodeQuery{ID: queryID, Query: "*"}}
-	c.Write(m.toJSON())
-}
-
-func onNodeMessage(c *tcpClient.Client, m NodeMessage) {
-	log.Debug().Msgf("New node request with query: %v", m.Query)
-	if m.Origin == myAddr {
-		nodeData[m.Query.ID][m.Sender] = m.Data
-	} else {
-		_, processed := querySieve[m.Query.ID]
-		if processed {
-			return
+		if !contains(m.Trace, node) { // So it won't go back from where it came
+			nC := getClient(node)
+			nC.WriteAsync(m.ToJSON())
+			log.Debug().Msgf("\nSent all message to %v: \n%v\n", node, m)
+			i++
 		}
-		for _, node := range connections {
-			go func(_node string) {
-				askNodeInfo(_node, m.Query.ID)
-			}(node)
+	}
+	if i == 0 { // End of line == leaf, send REPLY message with only my data
+		m.Type = "REPLY"
+		parent, rest := m.Trace[1], m.Trace[2:] // Remove myself (trace[0]) and get the receiver (trace[1])
+		m.Trace = rest
+		m.Data = append(m.Data, items...)
+		newC := getClient(parent)
+		newC.WriteAsync(m.ToJSON())
+		log.Debug().Msgf("\nSent EOL message to %v: \n%v\n", parent, m)
+	}
+	nD.q[queryID] = &NodeState{SubQueries: i, Data: make(eugddc.DogDict)}
+	nD.q[queryID].Data[myAddr] = items
+}
+
+func getClient(addr string) *tcpClient.Client {
+	cP.Lock()
+	defer cP.Unlock()
+	cachedC := cP.pool[addr]
+	if cachedC != nil && !cachedC.Closed {
+		return cachedC
+	}
+	client := tcpClient.Connect(addr)
+	cP.pool[addr] = client
+	return client
+}
+
+func contains(arr []string, elem string) bool {
+	for _, el := range arr {
+		if el == elem {
+			return true
 		}
-		querySieve[m.Query.ID] = true
-		newDogs := nodeData[m.Query.ID].toSlice()
-		response := NodeMessage{Origin: m.Origin, Sender: myAddr, Query: m.Query, Data: newDogs}
-		c.Write(response.toJSON())
 	}
-}
-
-type DogDict map[string][]eugddc.Dog
-
-func (d DogDict) toSlice() []eugddc.Dog {
-	slice := make([]eugddc.Dog, 0, len(d))
-	for _, value := range d {
-		slice = append(slice, value...)
-	}
-	return slice
-}
-
-type NodeMessage struct {
-	Origin string
-	Sender string
-	Query  NodeQuery
-	Data   []eugddc.Dog
-}
-
-type NodeQuery struct {
-	ID    string
-	Query string
-}
-
-func NodeMessageFromJSON(data []byte) (NodeMessage, error) {
-	var a NodeMessage
-	err := json.Unmarshal(data, a)
-	return a, err
-}
-
-func (m NodeMessage) toJSON() []byte {
-	data, err := json.Marshal(m)
-	eugddc.CheckError(err, "[NodeMessage] Error converting to JSON")
-	return data
+	return false
 }

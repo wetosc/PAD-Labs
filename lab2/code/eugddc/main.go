@@ -10,7 +10,7 @@ import (
 
 const MediatorAddr = ":9876"
 const ClientAddr = ":9000"
-const NodeBasePort = 9000
+const NodeBasePort = 15100
 
 //CheckError checks if error is not nil and if so prints the description in logs on level INFO
 func CheckError(err error, info string) {
@@ -19,27 +19,26 @@ func CheckError(err error, info string) {
 	}
 }
 
-type Message struct {
-	Query string
+type NodeMessage struct {
+	Type  string
+	Trace []string
+	Query NodeQuery
 	Data  []Dog
 }
 
-func NewMessage(query string) Message {
-	return Message{Query: query, Data: nil}
+type NodeQuery struct {
+	ID    string
+	Query string
 }
 
-func NewMessage_Data(query string, dogs []Dog) Message {
-	return Message{Query: query, Data: dogs}
-}
-
-func MessageFromJSON(data []byte) (Message, error) {
-	var a Message
+func NodeMessageFromJSON(data []byte) (NodeMessage, error) {
+	var a NodeMessage
 	err := json.Unmarshal(data, &a)
 	return a, err
 }
 
-func MessageToJSON(a Message) []byte {
-	data, err := json.Marshal(a)
-	CheckError(err, "[EUGDDC] Error converting data to []byte")
+func (m NodeMessage) ToJSON() []byte {
+	data, err := json.Marshal(m)
+	CheckError(err, "[NodeMessage] Error converting to JSON")
 	return data
 }

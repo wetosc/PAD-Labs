@@ -1,6 +1,7 @@
 package tcpClient
 
 import (
+	"bytes"
 	"io"
 	"net"
 	"time"
@@ -9,7 +10,8 @@ import (
 )
 
 type Client struct {
-	conn net.Conn
+	conn   net.Conn
+	Closed bool
 }
 
 func (c *Client) Addr() (string, string) {
@@ -23,7 +25,8 @@ func NewClient(conn net.Conn) *Client {
 
 func (c *Client) Write(data []byte) {
 	_, err := c.conn.Write(data)
-	CheckError(err, "[TCPClient] Error writing data")
+	checkError(err, "[TCPClient] Error writing data")
+	c.checkClosed(err)
 }
 
 // Read reads sync from client and returns []byte.
@@ -31,7 +34,8 @@ func (c *Client) Write(data []byte) {
 func (c *Client) Read() []byte {
 	data := make([]byte, 1024)
 	n, err := c.conn.Read(data)
-	CheckError(err, "[TCPClient] Error reading data")
+	checkError(err, "[TCPClient] Error reading data")
+	c.checkClosed(err)
 	return data[:n]
 }
 
@@ -47,20 +51,25 @@ func (c *Client) ReadAsync(callback func(*Client, []byte)) {
 		for {
 			data = make([]byte, 1024)
 			n, err := c.conn.Read(data)
-			callback(c, data[:n])
+			data = data[:n]
+			resSlice := bytes.Split(bytes.Replace(data, []byte("}{"), []byte("}\n{"), -1), []byte("\n"))
+			for i := range resSlice {
+				callback(c, resSlice[i])
+			}
 			if err == io.EOF {
-				CheckError(err, "[TCPClient] The connection closed")
+				checkError(err, "[TCPClient] The connection closed")
 				break
 			} else {
-				CheckError(err, "[TCPClient] Error reading data")
+				checkError(err, "[TCPClient] Error reading data")
 			}
+			c.checkClosed(err)
 		}
 	}()
 }
 
 func Connect(addr string) *Client {
 	conn, err := net.Dial("tcp", addr)
-	CheckError(err, "[TCPClient] Error creating connection")
+	checkError(err, "[TCPClient] Error creating connection")
 	return NewClient(conn)
 }
 
@@ -68,7 +77,7 @@ func TryConnectSync(addr string) *Client {
 	conn, err := net.Dial("tcp", addr)
 	for err != nil {
 		conn, err = net.Dial("tcp", addr)
-		CheckError(err, "[TCPClient] Error creating connection")
+		checkError(err, "[TCPClient] Error creating connection")
 		time.Sleep(1000 * time.Millisecond)
 	}
 	return NewClient(conn)
@@ -76,29 +85,35 @@ func TryConnectSync(addr string) *Client {
 
 func StartServer(addr string, callback func(net.Conn)) {
 	listener, err := net.Listen("tcp", addr)
-	CheckError(err, "[TCPClient] Error creating the listener")
+	checkError(err, "[TCPClient] Error creating the listener")
 	for {
 		conn, err := listener.Accept()
-		CheckError(err, "[TCPClient] Error accepting connection")
+		checkError(err, "[TCPClient] Error accepting connection")
 		callback(conn)
 	}
 }
 
 func StartServerAsync(addr string, callback func(net.Conn)) {
 	listener, err := net.Listen("tcp", addr)
-	CheckError(err, "[TCPClient] Error creating the listener")
+	checkError(err, "[TCPClient] Error creating the listener")
 	go func() {
 		for {
 			conn, err := listener.Accept()
-			CheckError(err, "[TCPClient] Error accepting connection")
+			checkError(err, "[TCPClient] Error accepting connection")
 			callback(conn)
 		}
 	}()
 }
 
 //CheckError checks if error is not nil and if so prints the description in logs on level INFO
-func CheckError(err error, info string) {
+func checkError(err error, info string) {
 	if err != nil {
 		log.Debug().Msgf("%v : %v", info, err)
+	}
+}
+
+func (c *Client) checkClosed(err error) {
+	if err == io.EOF {
+		c.Closed = true
 	}
 }

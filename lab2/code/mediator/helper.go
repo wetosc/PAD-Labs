@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"pad.com/lab2/code/eugddc"
+
 	"github.com/rs/zerolog"
 )
 
@@ -31,6 +33,6 @@ func parseNodes(str string) {
 	elems := strings.Split(str, " ")
 	for _, n := range elems {
 		port, _ := strconv.Atoi(n)
-		connections = append(connections, ":"+strconv.Itoa(9000+port))
+		connections = append(connections, ":"+strconv.Itoa(eugddc.NodeBasePort+port))
 	}
 }

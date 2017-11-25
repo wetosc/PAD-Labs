@@ -20,7 +20,7 @@ func parseFlags() {
 	connectionsPointer := flag.String("n", "", "Set the id of nodes connected to this one")
 	logLevel := flag.String("v", "debug", "Set the verbosity level (info or debug)")
 	flag.Parse()
-	myAddr = ":" + strconv.Itoa(9000+*portPointer)
+	myAddr = ":" + strconv.Itoa(eugddc.NodeBasePort+*portPointer)
 	fileName = *fileNamePointer
 	parseNodes(*connectionsPointer)
 	switch *logLevel {
@@ -40,6 +40,8 @@ func parseNodes(str string) {
 	elems := strings.Split(str, " ")
 	for _, n := range elems {
 		port, _ := strconv.Atoi(n)
-		connections = append(connections, ":"+strconv.Itoa(9000+port))
+		if port > 0 {
+			connections = append(connections, ":"+strconv.Itoa(eugddc.NodeBasePort+port))
+		}
 	}
 }
