@@ -23,4 +23,5 @@ gnome-terminal --geometry 80x22-0+300 -x sh -c ' ./node/node -id 6 -f data6.json
 
 gnome-terminal --geometry 80x20-0-0 -x sh -c ' ./mediator/mediator -n "2 6"  ; bash'
 
-gnome-terminal --geometry 80x20+0-0 -x sh -c ' ./client/client  ; bash'
+gnome-terminal --geometry 80x20+0-0 -x sh -c ' ./client/client -f json  ; bash'
+gnome-terminal --geometry 80x20+0-0 -x sh -c ' ./client/client -f xml   ; bash'

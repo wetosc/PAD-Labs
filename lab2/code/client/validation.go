@@ -9,7 +9,7 @@ import (
 	"github.com/lestrrat/go-libxml2/xsd"
 )
 
-func validate(xmlData []byte) bool {
+func validateXML(xmlData []byte) bool {
 	data, err := ioutil.ReadFile("schema.xsd")
 	eugddc.CheckError(err, "Failed to read XML Schema file")
 	s, err := xsd.Parse(data)
@@ -26,5 +26,9 @@ func validate(xmlData []byte) bool {
 		}
 		return false
 	}
+	return true
+}
+
+func validateJSON(jsonData []byte) bool {
 	return true
 }

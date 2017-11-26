@@ -11,7 +11,9 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	log.Info().Msgf("Client started")
+	parseFlags()
+
+	log.Info().Msgf("Client started with format: %v", format)
 
 	requestAllData()
 

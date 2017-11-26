@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
-          <!-- XML Schema Generated from XML Document on Sun Nov 26 2017 16:24:16 GMT+0200 (EET) -->
+          <!-- XML Schema Generated from XML Document on Sun Nov 26 2017 16:41:12 GMT+0200 (EET) -->
           <!-- with XmlGrid.net Free Online Service http://xmlgrid.net -->
        <xs:element name="NodeMessage">
               <xs:complexType>
                      <xs:sequence>
                             <xs:element name="Type" type="xs:string"></xs:element>
+                            <xs:element name="Format"></xs:element>
                             <xs:element name="Query">
                                    <xs:complexType>
                                           <xs:sequence>

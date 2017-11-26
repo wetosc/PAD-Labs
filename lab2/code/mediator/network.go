@@ -41,7 +41,14 @@ func onMessage(c *tcpClient.Client, data []byte) {
 			if len(allData[m.Query.ID]) == len(connections) {
 				log.Debug().Msg("Received data from all connections")
 				m.Data = allData[queryID].ToSlice()
-				newC.Write(m.ToXML())
+				switch m.Format {
+				case "XML":
+					newC.Write(m.ToXML())
+				case "JSON":
+					newC.Write(m.ToJSON())
+				default:
+					newC.Write(m.ToJSON())
+				}
 				// log.Debug().Msgf("\n%v\n", string(m.ToXML()))
 				delete(clients, queryID)
 				delete(allData, queryID)
@@ -51,7 +58,7 @@ func onMessage(c *tcpClient.Client, data []byte) {
 		newQID := strconv.Itoa(requestID)
 		clients[newQID] = c
 		myAddr, _ := c.Addr()
-		newM := eugddc.NodeMessage{Type: "GET", Trace: []string{myAddr},
+		newM := eugddc.NodeMessage{Type: "GET", Format: m.Format, Trace: []string{myAddr},
 			Query: eugddc.NodeQuery{ID: newQID, Query: m.Query.Query, Params: m.Query.Params},
 			Data:  nil}
 		requestID++

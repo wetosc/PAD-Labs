@@ -21,10 +21,11 @@ func CheckError(err error, info string) {
 }
 
 type NodeMessage struct {
-	Type  string
-	Trace []string
-	Query NodeQuery
-	Data  []Dog
+	Type   string
+	Format string
+	Trace  []string
+	Query  NodeQuery
+	Data   []Dog
 }
 
 type NodeQuery struct {
