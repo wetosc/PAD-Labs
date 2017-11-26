@@ -4,6 +4,7 @@ package eugddc
 
 import (
 	"encoding/json"
+	"encoding/xml"
 
 	"github.com/rs/zerolog/log"
 )
@@ -37,8 +38,20 @@ func NodeMessageFromJSON(data []byte) (NodeMessage, error) {
 	return a, err
 }
 
+func NodeMessageFromXML(data []byte) (NodeMessage, error) {
+	var a NodeMessage
+	err := xml.Unmarshal(data, &a)
+	return a, err
+}
+
 func (m NodeMessage) ToJSON() []byte {
 	data, err := json.Marshal(m)
 	CheckError(err, "[NodeMessage] Error converting to JSON")
+	return data
+}
+
+func (m NodeMessage) ToXML() []byte {
+	data, err := xml.Marshal(m)
+	CheckError(err, "[NodeMessage] Error converting to XML")
 	return data
 }

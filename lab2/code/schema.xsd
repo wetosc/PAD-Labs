@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+          <!-- XML Schema Generated from XML Document on Sat Nov 25 2017 15:54:17 GMT+0200 (EET) -->
+          <!-- with XmlGrid.net Free Online Service http://xmlgrid.net -->
+       <xs:element name="NodeMessage">
+              <xs:complexType>
+                     <xs:sequence>
+                            <xs:element name="Type" type="xs:string"></xs:element>
+                            <xs:element name="Query">
+                                   <xs:complexType>
+                                          <xs:sequence>
+                                                 <xs:element name="ID" type="xs:int"></xs:element>
+                                                 <xs:element name="Query" type="xs:string"></xs:element>
+                                             </xs:sequence>
+                                      </xs:complexType>
+                               </xs:element>
+                            <xs:element name="Data" maxOccurs="unbounded">
+                                   <xs:complexType>
+                                          <xs:sequence>
+                                                 <xs:element name="Name" type="xs:string"></xs:element>
+                                                 <xs:element name="Age" type="xs:int"></xs:element>
+                                             </xs:sequence>
+                                      </xs:complexType>
+                               </xs:element>
+                        </xs:sequence>
+                 </xs:complexType>
+          </xs:element>
+   </xs:schema>

@@ -41,7 +41,7 @@ func onMessage(c *tcpClient.Client, data []byte) {
 			if len(allData[m.Query.ID]) == len(connections) {
 				log.Debug().Msg("Received data from all connections")
 				m.Data = allData[queryID].ToSlice()
-				newC.Write(m.ToJSON())
+				newC.Write(m.ToXML())
 				delete(clients, queryID)
 				delete(allData, queryID)
 			}

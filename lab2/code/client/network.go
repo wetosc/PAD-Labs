@@ -20,7 +20,12 @@ func onMediatorMessage(c *tcpClient.Client, data []byte) {
 	if len(data) == 0 {
 		return
 	}
-	m, err := eugddc.NodeMessageFromJSON(data)
-	eugddc.CheckError(err, "Error parsing mediator JSON")
-	log.Debug().Msgf("Received data: %v", m.Data)
+	if validate(data) {
+		log.Info().Msgf("XML Document validated successfully")
+		m, err := eugddc.NodeMessageFromXML(data)
+		eugddc.CheckError(err, "Error parsing mediator XML")
+		log.Debug().Msgf("Received data: %v", m.Data)
+	} else {
+		log.Info().Msgf("Received invalid XML response")
+	}
 }
