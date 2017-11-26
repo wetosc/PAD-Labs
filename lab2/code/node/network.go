@@ -61,6 +61,7 @@ func onREPLYMessage(m eugddc.NodeMessage, rAddr string) {
 		parent, rest := m.Trace[0], m.Trace[1:]
 		m.Trace = rest
 		m.Data = nD.q[queryID].Data.ToSlice()
+		m.Data = eugddc.Perform(m.Query, m.Data)
 		newC := getClient(parent)
 		newC.WriteAsync(m.ToJSON())
 		log.Debug().Msgf("\nSent reply message to %v: \n%v\n", parent, m)
@@ -101,6 +102,7 @@ func onGETMessage(m eugddc.NodeMessage) {
 		parent, rest := m.Trace[1], m.Trace[2:] // Remove myself (trace[0]) and get the receiver (trace[1])
 		m.Trace = rest
 		m.Data = append(m.Data, items...)
+		m.Data = eugddc.Perform(m.Query, m.Data)
 		newC := getClient(parent)
 		newC.WriteAsync(m.ToJSON())
 		log.Debug().Msgf("\nSent EOL message to %v: \n%v\n", parent, m)

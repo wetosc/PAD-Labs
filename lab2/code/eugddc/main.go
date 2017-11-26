@@ -28,8 +28,20 @@ type NodeMessage struct {
 }
 
 type NodeQuery struct {
-	ID    string
-	Query string
+	ID     string
+	Query  string
+	Params *QueryParams
+}
+
+type QueryParams struct {
+	// ACTION = FILTER
+	// PARAM = NAME, AGE
+	// OPERATION =  < > =
+	// VALUE = string or int
+	Action    string
+	Param     string
+	Operation string
+	Value     string
 }
 
 func NodeMessageFromJSON(data []byte) (NodeMessage, error) {

@@ -11,7 +11,8 @@ func requestAllData() {
 	lAddr, rAddr := client.Addr()
 	log.Debug().Msgf("Connected to mediator %v -> %v", lAddr, rAddr)
 	client.ReadAsync(onMediatorMessage)
-	m := eugddc.NodeMessage{Type: "CLIENT", Trace: nil, Query: eugddc.NodeQuery{ID: "", Query: "*"}, Data: nil}
+	params := &eugddc.QueryParams{Action: "FILTER", Operation: "<", Param: "AGE", Value: "8"}
+	m := eugddc.NodeMessage{Type: "CLIENT", Trace: nil, Query: eugddc.NodeQuery{ID: "", Query: "*", Params: params}, Data: nil}
 	client.Write(m.ToJSON())
 	log.Debug().Msg("Sent message '*' to mediator")
 }

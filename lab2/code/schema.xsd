@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
-          <!-- XML Schema Generated from XML Document on Sat Nov 25 2017 15:54:17 GMT+0200 (EET) -->
+          <!-- XML Schema Generated from XML Document on Sun Nov 26 2017 16:24:16 GMT+0200 (EET) -->
           <!-- with XmlGrid.net Free Online Service http://xmlgrid.net -->
        <xs:element name="NodeMessage">
               <xs:complexType>
@@ -11,6 +11,16 @@
                                           <xs:sequence>
                                                  <xs:element name="ID" type="xs:int"></xs:element>
                                                  <xs:element name="Query" type="xs:string"></xs:element>
+                                                 <xs:element name="Params">
+                                                        <xs:complexType>
+                                                               <xs:sequence>
+                                                                      <xs:element name="Action" type="xs:string"></xs:element>
+                                                                      <xs:element name="Param" type="xs:string"></xs:element>
+                                                                      <xs:element name="Operation" type="xs:string"></xs:element>
+                                                                      <xs:element name="Value" type="xs:int"></xs:element>
+                                                                  </xs:sequence>
+                                                           </xs:complexType>
+                                                    </xs:element>
                                              </xs:sequence>
                                       </xs:complexType>
                                </xs:element>

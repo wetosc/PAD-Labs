@@ -42,6 +42,7 @@ func onMessage(c *tcpClient.Client, data []byte) {
 				log.Debug().Msg("Received data from all connections")
 				m.Data = allData[queryID].ToSlice()
 				newC.Write(m.ToXML())
+				// log.Debug().Msgf("\n%v\n", string(m.ToXML()))
 				delete(clients, queryID)
 				delete(allData, queryID)
 			}
@@ -50,7 +51,9 @@ func onMessage(c *tcpClient.Client, data []byte) {
 		newQID := strconv.Itoa(requestID)
 		clients[newQID] = c
 		myAddr, _ := c.Addr()
-		newM := eugddc.NodeMessage{Type: "GET", Trace: []string{myAddr}, Query: eugddc.NodeQuery{ID: newQID, Query: m.Query.Query}, Data: nil}
+		newM := eugddc.NodeMessage{Type: "GET", Trace: []string{myAddr},
+			Query: eugddc.NodeQuery{ID: newQID, Query: m.Query.Query, Params: m.Query.Params},
+			Data:  nil}
 		requestID++
 		for _, node := range connections {
 			nodeC := getClient(node)
