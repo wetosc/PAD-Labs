@@ -3,6 +3,9 @@ package main
 import (
 	"io/ioutil"
 
+	"github.com/lestrrat/go-jsschema"
+	"github.com/lestrrat/go-jsval/builder"
+
 	"pad.com/lab2/code/eugddc"
 
 	libxml2 "github.com/lestrrat/go-libxml2"
@@ -29,6 +32,15 @@ func validateXML(xmlData []byte) bool {
 	return true
 }
 
-func validateJSON(jsonData []byte) bool {
-	return true
+func validateJSON(jsonData interface{}) bool {
+	s, err := schema.ReadFile("schema.json")
+	eugddc.CheckError(err, "Failed to read JSON Schema file")
+
+	b := builder.New()
+	v, err := b.Build(s)
+	eugddc.CheckError(err, "Failed to build JSON Schema validator")
+
+	err = v.Validate(jsonData)
+	eugddc.CheckError(err, "[JSON Schema] Error in your JSON")
+	return err == nil
 }

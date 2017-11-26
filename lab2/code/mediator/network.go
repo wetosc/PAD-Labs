@@ -49,7 +49,7 @@ func onMessage(c *tcpClient.Client, data []byte) {
 				default:
 					newC.Write(m.ToJSON())
 				}
-				// log.Debug().Msgf("\n%v\n", string(m.ToXML()))
+				log.Debug().Msgf("\n%v\n", string(data))
 				delete(clients, queryID)
 				delete(allData, queryID)
 			}
