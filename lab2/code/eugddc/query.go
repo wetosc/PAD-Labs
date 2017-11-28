@@ -65,9 +65,7 @@ func filter(items []Dog, f func(Dog) bool) []Dog {
 	itemsF := make([]Dog, 0)
 	for _, item := range items {
 		if f(item) {
-			if f(item) {
-				itemsF = append(itemsF, item)
-			}
+			itemsF = append(itemsF, item)
 		}
 	}
 	return itemsF
