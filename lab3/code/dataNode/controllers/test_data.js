@@ -1,11 +1,15 @@
-const cassandra = require('cassandra-driver');
-const client = new cassandra.Client({ contactPoints: ['localhost'], keyspace: 'lab3' });
-client.connect()
+var mysql = require('mysql');
 
-const qWineAll = 'SELECT id FROM wine';
-const qCellarAll = 'SELECT id FROM cellar';
+var client = mysql.createPool({
+  connectionLimit : 100,
+  host: "localhost",
+  user: "pad",
+  password: "PAD",
+  database: "pad3"
+});
 
-const qNewWine = 'INSERT INTO wine(color, flavor, name, price) VALUES (?, ?, ?, ?)'
+const qWineRandom = 'select id from wine order by rand();'
+const qCellarRandom = 'select id from cellar order by rand();'
 
 var a = false
 var b = false
@@ -13,17 +17,17 @@ var b = false
 var items1
 var items2
 
-client.execute(qWineAll, [], function(err, result) {
+client.query(qWineRandom, [], function(err, fields, columns) {
     console.log(err)
     a = true
-    items1 = result.rows
+    items1 = fields
     completion()
 }); 
 
-client.execute(qCellarAll, [], function(err, result) {
+client.query(qCellarRandom, [], function(err, fields, columns) {
     console.log(err)
     b = true
-    items2 = result.rows
+    items2 = fields
     completion()
 });
 
@@ -37,14 +41,9 @@ function completion() {
     randomID1 = randomID1.concat(items1.sort(() => .5 - Math.random()).slice(0,50).map((x) => x.id))
     randomID2 = randomID2.concat(items2.sort(() => .5 - Math.random()).slice(0,50).map((x) => x.id))
 
-    var queries = Array()
     for (let i = 0; i < 100; i++) {
         const el1 = randomID1[i]
         const el2 = randomID2[i]
-        queries.push({query: 'INSERT INTO wine_to_cellar (wine_id, cellar_id) VALUES(?, ?)', params: [el1, el2]})
+        client.query('INSERT INTO wine_to_cellar (wine_id, cellar_id) VALUES(?, ?)',[el1, el2])
     }
-
-    client.batch(queries, { prepare: true }, function (err) {
-        console.log(err)    
-    });
 }
