@@ -1,92 +1,82 @@
-var mysql = require('mysql');
-
-var client = mysql.createPool({
-  connectionLimit : 100,
-  host: "localhost",
-  user: "pad",
-  password: "PAD",
-  database: "pad3"
-});
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('pad', 'pad', 'PAD', {
+    host: 'localhost',
+    dialect: 'postgres',
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+  });
 
 const uuid = require('uuid/v4');
 
+const Wine = sequelize.define('wine', {
+    'id': {
+        type: Sequelize.UUID,
+        primaryKey: true,
+        allowNull: false,
+        defaultValue: Sequelize.UUIDV4
+    },
+    'color': Sequelize.STRING,
+    'flavor': Sequelize.STRING,
+    'name': Sequelize.STRING,
+    'price': Sequelize.FLOAT
+})
 
-const qWineAll = 'SELECT id, color, flavor, name, price FROM wine';
-const qWineID =  'SELECT id, color, flavor, name, price FROM wine WHERE id = ?';
-const qWineCellar =  'select c.* from cellar as c inner join wine_to_cellar as w2c on c.id = w2c.cellar_id where w2c.wine_id = ?';
+const Cellar = sequelize.define('cellar', {
+    'id': {
+        type: Sequelize.UUID,
+        primaryKey: true,
+        allowNull: false,
+        defaultValue: Sequelize.UUIDV4
+    },
+    'area': Sequelize.FLOAT,
+    'location': Sequelize.STRING,
+    'name': Sequelize.STRING,
+    'owner': Sequelize.STRING
+})
 
-const qCellarAll = 'SELECT id, area, location, name, owner FROM cellar';
-const qCellarID =  'SELECT id, area, location, name, owner FROM cellar WHERE id = ?';
-const qCellarWine =  'select w.* from wine as w inner join wine_to_cellar as w2c on w.id = w2c.wine_id where w2c.cellar_id = ?';
+Cellar.belongsToMany(Wine, {through: 'wine_cellar'});
+Wine.belongsToMany(Cellar, {through: 'wine_cellar'});
 
-const qNewWine = 'INSERT INTO wine(id, color, flavor, name, price) VALUES (?, ?, ?, ?, ?)'
-const qNewCellar = 'INSERT INTO cellar(id, area, location, name, owner) VALUES (?, ?, ?, ?, ?)'
+sequelize.sync({force: false})
+
+exports.sequelize = sequelize
+exports.Wine = Wine
+exports.Cellar = Cellar
 
 exports.getAllWine = function (callback) {
-    client.query(qWineAll, [ ], function(err, rows, columns) {
-        console.log(err)
-        callback(err, rows)
+    Wine.findAll().then(rows => {
+        callback(null, rows)
+    });
+}
+
+exports.getAllCellar = function (callback) {
+    Cellar.findAll().then(rows => {
+        callback(null, rows)
     });
 }
 
 exports.getWineByID = function (id, callback) {
-    var collector = {data1: null, data2: null}
-    var myErr
-    
-    function myCallback() {
-        if (collector.data1 && collector.data2) {
-            var obj = collector.data1
-            obj.cellars = collector.data2
-            return callback(myErr, obj)
-        }
-    }
-    client.query(qWineID, [ id ], function(err, rows, columns) {
-        console.log(err)
-        collector.data1 = rows[0]
-        myErr = myErr || err
-        myCallback()
-    });
-    client.query(qWineCellar, [id], function(err, rows, columns) {
-        console.log(err)
-        collector.data2 = rows
-        myErr = myErr || err
-        myCallback()
+    Wine.findById(id, {include: Cellar})
+    .then(rows => {
+        callback(null, filterIntermediary(rows.toJSON(), "cellars"))
     })
-}
-
-exports.getAllCellar = function (callback) {
-    client.query(qCellarAll, [], function(err, rows, columns) {
-        console.log(err)
-        callback(err, rows)
-    });
+    .catch(error => {
+        callback(error, null)
+    })
 }
 
 exports.getCellarByID = function (id, callback) {
-    var collector = {data1: null, data2: null}
-    var myErr
-    
-    function myCallback() {
-        if (collector.data1 && collector.data2) {
-            var obj = collector.data1
-            obj.wines = collector.data2
-            return callback(myErr, obj)
-        }
-    }
-
-
-    client.query(qCellarID, [ id ], function(err, rows, columns) {
-        console.log(err)
-        collector.data1 = rows[0]
-        myErr = myErr || err
-        myCallback()
+    Cellar.findById(id, {include: Wine})
+    .then(rows => {
+        callback(null, filterIntermediary(rows.toJSON(), "wines"))
     })
-
-    client.query(qCellarWine, [id], function(err, rows, columns) {
-        console.log(err)
-        collector.data2 = rows
-        myErr = myErr || err
-        myCallback()
-    })    
+    .catch(error => {
+        callback(error, null)
+    })
 }
 
 exports.insertWine = function (d, callback) {
@@ -105,4 +95,12 @@ exports.insertCellar = function (d, callback) {
         console.log(err)
         callback(err, d)
     })
+}
+
+
+function filterIntermediary(array, subParam) {
+    for (let j = 0; j < array[subParam].length; j++) {
+        array[subParam][j]["wine_cellar"] = undefined
+    }
+    return array
 }
