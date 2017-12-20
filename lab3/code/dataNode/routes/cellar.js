@@ -3,7 +3,7 @@ var router = express.Router();
 var db = require('../controllers/db')
 
 router.get('/', function(req, res, next) {
-  db.getAllCellar( function (err, data) {
+  db.getAllCellar(req.query, function (err, data) {
     if (err != null) {    console.log(err); return res.status(500).end();   }
     res.json(data)
   })

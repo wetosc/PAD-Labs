@@ -56,15 +56,11 @@ var cellars =
 // })
 
 
-setTimeout(fillRelations, 1000);
+// setTimeout(fillRelations, 1000);
+
 function fillRelations() {
     db.Wine.findAll().then(wines => {
         db.Cellar.findAll().then(cellars => {
-            // console.log("\n\n")
-            // console.log(cellars)
-            // console.log("\n\n")
-            // console.log(shuffle(cellars, 3))
-            // console.log("\n\n")
             for (let i = 0; i < wines.length; i++) {
                 const wine = wines[i];
                 let sel = shuffle(cellars, 3)//.map(x=> {x.id}).filter(x=> {x != null})
